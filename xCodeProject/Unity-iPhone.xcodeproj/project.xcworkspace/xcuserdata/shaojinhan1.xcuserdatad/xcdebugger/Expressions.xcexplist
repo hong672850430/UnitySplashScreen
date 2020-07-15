@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VariablesViewState
+   version = "1.0">
+   <ContextStates>
+      <ContextState
+         contextName = "-[SplashScreenController observeValueForKeyPath:ofObject:change:context:]:SplashScreen.mm">
+         <PersistentStrings>
+            <PersistentString
+               value = "mAVPlayerItem.status">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+   </ContextStates>
+</VariablesViewState>
