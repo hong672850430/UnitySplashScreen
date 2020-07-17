@@ -260,6 +260,7 @@ extern "C" NSArray<NSString*>* GetLaunchImageNames(UIUserInterfaceIdiom idiom, c
     AVPlayer *mAVPlayer;
     AVPlayerItem *mAVPlayerItem;
     AVPlayerLayer *mAVPlayerLayer;
+    bool isPlayStatus;
 }
 
 - (id)init
@@ -387,6 +388,13 @@ extern "C" NSArray<NSString*>* GetLaunchImageNames(UIUserInterfaceIdiom idiom, c
         [mAVPlayerItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
 		//添加notice通知
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(playbackFinished:) name:AVPlayerItemDidPlayToEndTimeNotification object:mAVPlayerItem];
+        // app启动或者app从后台进入前台都会调用这个方法
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationDidBecomeActive) name:UIApplicationDidBecomeActiveNotification object:mAVPlayerItem];
+        // app从后台进入前台都会调用这个方法
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationWillEnterForeground) name:UIApplicationWillEnterForegroundNotification object:mAVPlayerItem];
+        // 添加检测app进入后台的观察者
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationDidEnterBackground) name: UIApplicationDidEnterBackgroundNotification object:mAVPlayerItem];
+        
         //初始化AVPlayer对象
         mAVPlayer = [AVPlayer playerWithPlayerItem:mAVPlayerItem];
         //初始化AVPlayerLayer对象，用来呈现视频显示的View
@@ -411,13 +419,16 @@ extern "C" NSArray<NSString*>* GetLaunchImageNames(UIUserInterfaceIdiom idiom, c
 
         if (status == AVPlayerItemStatusReadyToPlay) {
              // 播放
+            isPlayStatus = true;
             [mAVPlayer play];
         } 
 		else if (status == AVPlayerItemStatusFailed) {
             NSLog(@"AVPlayerItemStatusFailed");
+            isPlayStatus = false;
         } 
 		else {
             NSLog(@"AVPlayerItemStatusUnknown");
+            isPlayStatus = false;
         }
     } 
 }
@@ -427,6 +438,9 @@ extern "C" NSArray<NSString*>* GetLaunchImageNames(UIUserInterfaceIdiom idiom, c
     [mAVPlayerItem removeObserver:self forKeyPath:@"status"];
 
 	[[NSNotificationCenter defaultCenter] removeObserver:self name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidBecomeActiveNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
 	
     if(mAVPlayerLayer)
     {
@@ -436,10 +450,28 @@ extern "C" NSArray<NSString*>* GetLaunchImageNames(UIUserInterfaceIdiom idiom, c
     mAVPlayerItem = nil;
     mAVPlayer = nil;
     mAVPlayerLayer = nil;
+    isPlayStatus = false;
     
     OnDestroySplashScreen();
 }
+// 在AppDelete实现该方法
+- (void)applicationDidEnterBackground:(UIApplication *)application
+{
+   //进入后台
+}
+// 在AppDelete实现该方法
+- (void)applicationDidBecomeActive:(UIApplication *)application
+{
+   // app启动或者app从后台进入前台都会调用这个方法
+}
 
+- (void)applicationWillEnterForeground:(UIApplication *)application {
+    // app从后台进入前台都会调用这个方法
+    if(nil != mAVPlayer && isPlayStatus)
+    {
+        [mAVPlayer play];
+    }
+}
 - (BOOL)shouldAutorotate
 {
     return YES;
