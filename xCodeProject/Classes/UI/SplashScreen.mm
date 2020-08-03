@@ -380,6 +380,10 @@ extern "C" NSArray<NSString*>* GetLaunchImageNames(UIUserInterfaceIdiom idiom, c
 		return;
 	}
 	
+	AVAudioSession *audioSession = [AVAudioSession sharedInstance];
+    [audioSession setCategory:AVAudioSessionCategoryPlayback error:nil];
+    [audioSession setActive:YES error:nil];
+	
     try 
 	{
 		//初始化AVPlayerItem对象
@@ -394,7 +398,10 @@ extern "C" NSArray<NSString*>* GetLaunchImageNames(UIUserInterfaceIdiom idiom, c
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationWillEnterForeground) name:UIApplicationWillEnterForegroundNotification object:mAVPlayerItem];
         // 添加检测app进入后台的观察者
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationDidEnterBackground) name: UIApplicationDidEnterBackgroundNotification object:mAVPlayerItem];
-        
+        //
+		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleAudioSessionInterruption:) name:AVAudioSessionRouteChangeNotification object:mAVPlayerItem];
+
+		
         //初始化AVPlayer对象
         mAVPlayer = [AVPlayer playerWithPlayerItem:mAVPlayerItem];
         //初始化AVPlayerLayer对象，用来呈现视频显示的View
@@ -441,6 +448,7 @@ extern "C" NSArray<NSString*>* GetLaunchImageNames(UIUserInterfaceIdiom idiom, c
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidBecomeActiveNotification object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
+	[[NSNotificationCenter defaultCenter] removeObserver:self name:AVAudioSessionRouteChangeNotification object:nil];
 	
     if(mAVPlayerLayer)
     {
@@ -471,6 +479,33 @@ extern "C" NSArray<NSString*>* GetLaunchImageNames(UIUserInterfaceIdiom idiom, c
     {
         [mAVPlayer play];
     }
+}
+- (void)handleAudioSessionInterruption:(NSNotification*)notification
+{
+	 NSNumber *interruptionType = [[notification userInfo] objectForKey:AVAudioSessionInterruptionTypeKey];
+	 NSNumber *interruptionOption = [[notification userInfo] objectForKey:AVAudioSessionInterruptionOptionKey];
+
+	 switch (interruptionType.unsignedIntegerValue) 
+	 {
+		case AVAudioSessionInterruptionTypeBegan:{
+		//• Audio has stopped, already inactive
+		//• Change state of UI, etc., to reflect non-playing state
+		} break;
+
+
+		case AVAudioSessionInterruptionTypeEnded:{
+		//• Make session active
+		//• Update user interface
+		//• AVAudioSessionInterruptionOptionShouldResume option
+			if (interruptionOption.unsignedIntegerValue == AVAudioSessionInterruptionOptionShouldResume) {
+				//Here you should continue playback.
+				[mAVPlayer play];
+			}
+		} break;
+
+		default:
+		break;
+	 }
 }
 - (BOOL)shouldAutorotate
 {
