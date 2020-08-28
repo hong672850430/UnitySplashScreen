@@ -10,6 +10,7 @@
 #import <AVFoundation/AVPlayer.h>
 #import <AVFoundation/AVPlayerItem.h>
 #import <AVFoundation/AVPlayerLayer.h>
+#import <AVFoundation/AVFoundation.h>
 
 extern "C" const char* UnityGetLaunchScreenXib();
 
